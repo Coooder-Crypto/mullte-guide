@@ -207,19 +207,19 @@ export function ActionCard({
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="label-chip">Action Card</p>
-          <h2 className="mt-3 text-2xl font-semibold">执行存款</h2>
+          <h2 className="mt-3 text-xl font-semibold sm:text-2xl">执行存款</h2>
         </div>
-        <div className="rounded-full border border-border bg-white/80 px-4 py-2 text-sm text-muted">
+        <div className="w-full rounded-2xl border border-border bg-white/80 px-4 py-2 text-sm text-muted break-words md:w-auto md:rounded-full">
           {data.constraints.amount} {data.constraints.asset} → {data.vault.name}
         </div>
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="mt-6 grid gap-6 md:grid-cols-[1.1fr_0.9fr]">
         <div className="rounded-[28px] border border-border bg-white/80 p-5">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">Execution Readiness</p>
           <ul className="mt-4 space-y-3 text-sm leading-6 text-ink">
             <li className="rounded-2xl border border-border bg-slate-900/5 px-4 py-3">Composer Quote 使用 GET /v1/quote，通过服务端 Route Handler 代理。</li>
-            <li className="rounded-2xl border border-border bg-slate-900/5 px-4 py-3">`toToken` 固定为 vault.address：{data.vault.address}</li>
+            <li className="rounded-2xl border border-border bg-slate-900/5 px-4 py-3 break-all">`toToken` 固定为 vault.address：{data.vault.address}</li>
             <li className="rounded-2xl border border-border bg-slate-900/5 px-4 py-3">`fromAmount` 按 {data.vault.underlyingToken.decimals} 位精度换算，已兼容 USDC 6 位精度。</li>
           </ul>
         </div>
@@ -240,8 +240,12 @@ export function ActionCard({
         <div className="mt-5 rounded-3xl border border-orange-300 bg-orange-50 px-4 py-3 text-sm text-orange-800">{quoteError}</div>
       ) : null}
 
-      <div className="mt-6 flex flex-wrap gap-3">
-        {!isConnected ? <ConnectButton /> : null}
+      <div className="mt-6 grid gap-3 sm:flex sm:flex-wrap">
+        {!isConnected ? (
+          <div className="w-full sm:w-auto">
+            <ConnectButton />
+          </div>
+        ) : null}
 
         <button
           type="button"
@@ -273,8 +277,8 @@ export function ActionCard({
 
       <div className="mt-4 space-y-2 text-sm text-muted">
         <p>如果钱包不在目标链，点击授权或存入时会先尝试自动切链。</p>
-        {approvalHash ? <p className="font-mono text-xs text-muted">Approve Tx: {approvalHash}</p> : null}
-        {depositHash ? <p className="font-mono text-xs text-muted">Deposit Tx: {depositHash}</p> : null}
+        {approvalHash ? <p className="break-all font-mono text-xs text-muted">Approve Tx: {approvalHash}</p> : null}
+        {depositHash ? <p className="break-all font-mono text-xs text-muted">Deposit Tx: {depositHash}</p> : null}
       </div>
     </section>
   );
@@ -282,9 +286,9 @@ export function ActionCard({
 
 function StateRow({ label, value }: { label: string; value: string }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl border border-border bg-slate-900/5 px-4 py-3">
+    <div className="flex flex-col items-start justify-between gap-2 rounded-2xl border border-border bg-slate-900/5 px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
       <span>{label}</span>
-      <span className="font-medium text-ink">{value}</span>
+      <span className="break-all font-medium text-ink sm:text-right">{value}</span>
     </div>
   );
 }

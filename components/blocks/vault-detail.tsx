@@ -9,10 +9,10 @@ export function VaultDetail({ data }: { data: VaultDetailData }) {
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
           <p className="label-chip">Vault Detail</p>
-          <h2 className="mt-3 text-2xl font-semibold">{vault.name}</h2>
-          <p className="mt-2 text-sm text-muted">{vault.protocol} · {vault.network}</p>
+          <h2 className="mt-3 break-words text-xl font-semibold sm:text-2xl">{vault.name}</h2>
+          <p className="mt-2 break-words text-sm text-muted">{vault.protocol} · {vault.network}</p>
         </div>
-        <div className="flex flex-wrap gap-3 text-sm">
+        <div className="flex w-full flex-wrap gap-3 text-sm lg:w-auto">
           <Pill label="总 APY" value={formatPercent(vault.apy)} />
           <Pill label="Base APY" value={formatPercent(vault.apyBase)} />
           <Pill label="Reward APY" value={formatPercent(vault.apyReward)} />
@@ -20,7 +20,7 @@ export function VaultDetail({ data }: { data: VaultDetailData }) {
         </div>
       </div>
 
-      <div className="mt-6 grid gap-6 lg:grid-cols-[1.3fr_0.9fr]">
+      <div className="mt-6 grid gap-6 md:grid-cols-[1.3fr_0.9fr]">
         <div className="rounded-[28px] border border-border bg-white/80 p-5">
           <p className="text-sm font-semibold uppercase tracking-[0.2em] text-muted">Why Recommended</p>
           <ul className="mt-4 space-y-3 text-sm leading-6 text-ink">
@@ -53,9 +53,9 @@ export function VaultDetail({ data }: { data: VaultDetailData }) {
 
 function Pill({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-full border border-border bg-white/80 px-4 py-2">
+    <div className="w-full rounded-2xl border border-border bg-white/80 px-4 py-2 sm:w-auto sm:rounded-full">
       <span className="text-xs uppercase tracking-[0.16em] text-muted">{label}</span>
-      <span className="ml-2 font-semibold text-ink">{value}</span>
+      <span className="ml-2 break-words font-semibold text-ink">{value}</span>
     </div>
   );
 }

@@ -16,7 +16,7 @@ export function VaultList({
       <div className="flex flex-wrap items-end justify-between gap-4">
         <div>
           <p className="label-chip">Vault List</p>
-          <h2 className="mt-3 text-2xl font-semibold">{data.title}</h2>
+          <h2 className="mt-3 text-xl font-semibold sm:text-2xl">{data.title}</h2>
         </div>
         <p className="max-w-xl text-sm text-muted">优先展示可交易、链和资产最匹配的 vault。稳健模式下会提高稳定币与高 TVL 的权重。</p>
       </div>
@@ -35,7 +35,7 @@ export function VaultList({
                 type="button"
                 onClick={() => onSelectVault(vault.id)}
                 className={clsx(
-                  "rounded-[28px] border p-5 text-left transition",
+                  "rounded-[24px] border p-4 text-left transition sm:p-5 md:rounded-[28px]",
                   isSelected
                     ? "border-accent bg-accentSoft"
                     : "border-border bg-white/80 hover:border-accent/40 hover:bg-white",
@@ -43,11 +43,11 @@ export function VaultList({
               >
                 <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
                   <div>
-                    <div className="flex items-center gap-3">
+                    <div className="flex flex-wrap items-center gap-3">
                       <span className="text-sm font-medium text-muted">#{index + 1}</span>
-                      <h3 className="text-xl font-semibold">{vault.name}</h3>
+                      <h3 className="break-words text-lg font-semibold sm:text-xl">{vault.name}</h3>
                     </div>
-                    <p className="mt-2 text-sm text-muted">
+                    <p className="mt-2 break-words text-sm text-muted">
                       {vault.protocol} · {vault.network} · {vault.underlyingToken.symbol}
                     </p>
                     <div className="mt-3 flex flex-wrap gap-2">
@@ -59,7 +59,7 @@ export function VaultList({
                     </div>
                   </div>
 
-                  <div className="grid min-w-[220px] grid-cols-2 gap-3 text-sm">
+                  <div className="grid w-full min-w-0 grid-cols-2 gap-3 text-sm sm:min-w-[220px] md:w-auto">
                     <Metric label="APY" value={formatPercent(vault.apy)} />
                     <Metric label="TVL" value={formatCurrency(vault.tvlUsd)} />
                     <Metric label="底层资产" value={vault.underlyingToken.symbol} />
