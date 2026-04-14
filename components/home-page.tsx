@@ -1,25 +1,44 @@
 "use client";
 
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useMemo, useState } from "react";
+import { type KeyboardEvent, useMemo, useState } from "react";
 import { BlockRenderer } from "@/components/renderer/block-renderer";
+import { SiteHeader } from "@/components/site-header";
 import { buildBlocks } from "@/lib/agent/build-blocks";
 import { parseGoal, suggestPrompt } from "@/lib/agent/parse-goal";
 import { fetchEarnVaults } from "@/lib/api/earn";
 import type { NormalizedVault, PortfolioViewPosition, UserConstraints } from "@/lib/types/domain";
+import { getErrorMessage } from "@/lib/utils/get-error-message";
 import { filterVaults } from "@/lib/vaults/filter-vaults";
 import { normalizeVault } from "@/lib/vaults/normalize-vault";
 import { rankVaults } from "@/lib/vaults/rank-vaults";
 
 const DEFAULT_PROMPT = suggestPrompt();
+const QUICK_PROMPTS = [
+  DEFAULT_PROMPT,
+  "deploy 250 USDC on Base with balanced risk",
+  "park 1 ETH safely on Arbitrum",
+];
+
+type ChatMessage = {
+  id: string;
+  role: "user" | "assistant";
+  content: string;
+};
 
 export function HomePage() {
-  const [goalInput, setGoalInput] = useState(DEFAULT_PROMPT);
+  const [goalInput, setGoalInput] = useState("");
   const [constraints, setConstraints] = useState<UserConstraints | null>(null);
   const [vaults, setVaults] = useState<NormalizedVault[]>([]);
   const [selectedVaultId, setSelectedVaultId] = useState<string | null>(null);
   const [portfolioAddress, setPortfolioAddress] = useState<string | null>(null);
   const [portfolioPositions, setPortfolioPositions] = useState<PortfolioViewPosition[]>([]);
+  const [messages, setMessages] = useState<ChatMessage[]>([
+    {
+      id: "assistant-welcome",
+      role: "assistant",
+      content: "描述你的收益目标，例如：invest 100 USDC safely on Base。",
+    },
+  ]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -40,14 +59,27 @@ export function HomePage() {
     [constraints, vaults, selectedVault, portfolioAddress, portfolioPositions],
   );
 
+  const hasWorkspace = blocks.length > 0;
+
   async function handleAnalyze() {
+    const trimmed = goalInput.trim() || DEFAULT_PROMPT;
+
+    setMessages((current) => [
+      ...current,
+      {
+        id: `user-${Date.now()}`,
+        role: "user",
+        content: trimmed,
+      },
+    ]);
+
     setIsLoading(true);
     setError(null);
     setPortfolioAddress(null);
     setPortfolioPositions([]);
 
     try {
-      const parsedConstraints = parseGoal(goalInput);
+      const parsedConstraints = parseGoal(trimmed);
       const response = await fetchEarnVaults();
       const normalized = response.data
         .map(normalizeVault)
@@ -59,116 +91,207 @@ export function HomePage() {
       setConstraints(parsedConstraints);
       setVaults(ranked);
       setSelectedVaultId(ranked[0]?.id ?? null);
+      setGoalInput("");
+      setMessages((current) => [
+        ...current,
+        {
+          id: `assistant-${Date.now()}`,
+          role: "assistant",
+          content:
+            ranked.length > 0
+              ? `已理解为 ${parsedConstraints.amount} ${parsedConstraints.asset} on ${parsedConstraints.chain}，风险偏好 ${riskLabel(parsedConstraints.riskPreference)}。`
+              : `已理解为 ${parsedConstraints.amount} ${parsedConstraints.asset} on ${parsedConstraints.chain}，但当前没有找到合适的候选 vault。`,
+        },
+      ]);
     } catch (unknownError) {
-      const message = unknownError instanceof Error ? unknownError.message : "加载 vault 数据失败";
+      const message = getErrorMessage(unknownError, "加载 vault 数据失败");
       setError(message);
+      setMessages((current) => [
+        ...current,
+        {
+          id: `assistant-error-${Date.now()}`,
+          role: "assistant",
+          content: `请求失败：${message}`,
+        },
+      ]);
     } finally {
       setIsLoading(false);
     }
   }
 
+  function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+      event.preventDefault();
+      void handleAnalyze();
+    }
+  }
+
   return (
-    <main className="mx-auto flex min-h-screen max-w-7xl flex-col px-3 py-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:px-4 sm:py-6 md:px-6 md:py-8">
-      <section className="panel overflow-hidden p-6 md:p-8">
-        <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr] lg:items-end">
-          <div>
-            <div className="label-chip">DeFi Mullet Hackathon MVP</div>
-            <h1 className="mt-4 max-w-4xl text-[2.35rem] font-semibold tracking-tight text-ink sm:text-5xl md:mt-5 md:text-6xl">
-              Mullet Guide
-              <span className="mt-2 block text-lg font-medium text-muted sm:text-xl md:text-2xl">
-                AI-powered A2UI DeFi Yield Assistant
-              </span>
-            </h1>
-            <p className="mt-4 max-w-3xl text-sm leading-7 text-muted sm:text-base md:mt-5 md:text-lg">
-              用自然语言说出你的收益目标，前端会把意图解析成约束卡、vault 列表、解释卡和交易卡。整个体验由 A2UI JSON 驱动，不是写死页面流程。
-            </p>
-          </div>
+    <main className="page-shell">
+      <SiteHeader />
 
-          <div className="flex w-full flex-col items-stretch gap-4 lg:items-end">
-            <div className="w-full lg:w-auto">
-              <ConnectButton />
-            </div>
-            <div className="rounded-[24px] border border-border bg-white/75 px-4 py-3 text-sm text-muted break-words">
-              Demo 推荐输入：<span className="font-mono text-ink">{DEFAULT_PROMPT}</span>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      <section className="mt-6 grid gap-6 lg:grid-cols-[1.15fr_0.85fr]">
-        <div className="panel p-5 md:p-7">
-          <div className="flex flex-wrap items-center justify-between gap-4">
+      <section className="panel flex min-h-[calc(100vh-10rem)] flex-col overflow-hidden">
+        <div className="border-b border-border/80 px-5 py-5 md:px-7">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="label-chip">Goal Input</p>
-              <h2 className="mt-3 text-xl font-semibold sm:text-2xl">描述你的收益目标</h2>
+              <p className="label-chip">Chat</p>
+              <h1 className="mt-4 text-2xl font-semibold text-ink sm:text-[2rem]">说出你的收益目标</h1>
             </div>
-            <p className="max-w-md text-sm text-muted">
-              规则解析只处理金额、资产、链与风险偏好，范围小，故意保持简单可控。
-            </p>
+            <p className="text-sm text-muted">Ctrl / Cmd + Enter 发送</p>
           </div>
-
-          <textarea
-            value={goalInput}
-            onChange={(event) => setGoalInput(event.target.value)}
-            rows={4}
-            className="mt-6 w-full rounded-[24px] border border-border bg-white/80 px-4 py-4 text-base text-ink outline-none transition focus:border-accent sm:px-5"
-            placeholder="例如：put 500 USDC into a safe vault on Base above 5% APY"
-          />
-
-          <div className="mt-4 grid gap-3 sm:flex sm:flex-wrap">
-            <button
-              type="button"
-              onClick={() => void handleAnalyze()}
-              disabled={isLoading}
-              className="primary-button"
-            >
-              {isLoading ? "分析并加载中..." : "生成 A2UI 推荐流"}
-            </button>
-            <button
-              type="button"
-              onClick={() => setGoalInput(DEFAULT_PROMPT)}
-              className="secondary-button"
-            >
-              填入 Demo Prompt
-            </button>
-          </div>
-
-          {error ? (
-            <div className="mt-4 rounded-3xl border border-orange-300 bg-orange-50 px-4 py-3 text-sm text-orange-800">
-              {error}
-            </div>
-          ) : null}
         </div>
 
-        <div className="panel p-5 md:p-7">
-          <p className="label-chip">A2UI JSON</p>
-          <h2 className="mt-3 text-xl font-semibold sm:text-2xl">当前生成的界面 Schema</h2>
-          <p className="mt-3 text-sm leading-6 text-muted">
-            这个面板用于演示 Agent 并不直接输出静态页面，而是输出 block schema，再由前端 renderer 映射到组件。
-          </p>
-          <pre className="mt-5 max-h-[380px] overflow-auto rounded-[24px] border border-border bg-slate-950 p-4 text-[11px] leading-6 text-slate-100 whitespace-pre-wrap break-words sm:text-xs sm:whitespace-pre">
-            {blocks.length > 0 ? JSON.stringify(blocks, null, 2) : "[]"}
-          </pre>
-        </div>
-      </section>
+        <div className="flex flex-1 flex-col">
+          <div className="flex-1 space-y-5 overflow-auto bg-[#fcfcfc] px-4 py-5 md:px-6">
+            {messages.map((message) => (
+              <ChatBubble key={message.id} role={message.role} content={message.content} />
+            ))}
 
-      <section className="mt-6 pb-10">
-        {blocks.length > 0 ? (
-          <BlockRenderer
-            blocks={blocks}
-            selectedVaultId={selectedVaultId}
-            onSelectVault={setSelectedVaultId}
-            onPortfolioLoaded={(address, positions) => {
-              setPortfolioAddress(address);
-              setPortfolioPositions(positions);
-            }}
-          />
-        ) : (
-          <div className="panel p-6 text-center text-sm text-muted sm:p-8">
-            先输入目标并点击“生成 A2UI 推荐流”，系统会生成约束卡、候选 vault 和交易卡片。
+            {isLoading ? <LoadingBubble /> : null}
+
+            {error ? (
+              <div className="rounded-[10px] border border-orange-500 bg-[#fff7ed] px-4 py-4 text-sm text-orange-900">
+                {error}
+              </div>
+            ) : null}
+
+            {hasWorkspace ? (
+              <section className="rounded-[10px] border border-black bg-white p-3 shadow-[10px_10px_0_0_var(--accent-soft)] sm:p-4">
+                <BlockRenderer
+                  blocks={blocks}
+                  selectedVaultId={selectedVaultId}
+                  onSelectVault={setSelectedVaultId}
+                  onPortfolioLoaded={(address, positions) => {
+                    setPortfolioAddress(address);
+                    setPortfolioPositions(positions);
+                  }}
+                />
+              </section>
+            ) : isLoading ? (
+              <WorkspaceSkeleton />
+            ) : (
+              <section className="surface-card border-dashed px-5 py-6 text-sm leading-7 text-muted">
+                发送目标后，这里会展开可执行工作区。
+              </section>
+            )}
           </div>
-        )}
+
+          <div className="border-t border-border/80 bg-[#f4f4f5] px-4 py-4 md:px-6">
+            <div className="composer-shell">
+              <label htmlFor="goal-input" className="block text-sm font-medium text-ink">
+                收益目标
+              </label>
+              <textarea
+                id="goal-input"
+                value={goalInput}
+                onChange={(event) => setGoalInput(event.target.value)}
+                onKeyDown={handleComposerKeyDown}
+                rows={4}
+                className="mt-3 min-h-[120px] w-full resize-none rounded-[8px] border border-black bg-white px-3 py-3 text-base leading-7 text-ink"
+                placeholder="Type your yield goal..."
+              />
+
+              <div className="soft-divider mt-4" />
+
+              <div className="mt-4 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
+                <div className="flex flex-wrap gap-2">
+                  {QUICK_PROMPTS.map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => setGoalInput(prompt)}
+                      disabled={isLoading}
+                      className="prompt-pill"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
+                </div>
+
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => setGoalInput(DEFAULT_PROMPT)}
+                    disabled={isLoading}
+                    className="secondary-button"
+                  >
+                    Use Demo Prompt
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => void handleAnalyze()}
+                    disabled={isLoading}
+                    className="primary-button"
+                  >
+                    {isLoading ? "Thinking..." : "Send"}
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       </section>
     </main>
   );
+}
+
+function ChatBubble({ role, content }: { role: "user" | "assistant"; content: string }) {
+  const isUser = role === "user";
+
+  return (
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+      <div
+        className={`max-w-[94%] rounded-[10px] border px-4 py-4 text-sm leading-7 sm:max-w-[82%] ${
+          isUser
+            ? "border-black bg-black text-white shadow-[10px_10px_0_0_rgba(24,24,27,0.12)]"
+            : "border-black bg-white text-ink shadow-[10px_10px_0_0_var(--accent-soft)]"
+        }`}
+      >
+        <p className={`mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] ${isUser ? "text-white/72" : "text-muted"}`}>
+          {isUser ? "You" : "Mullet Guide"}
+        </p>
+        <p className="whitespace-pre-wrap break-words">{content}</p>
+      </div>
+    </div>
+  );
+}
+
+function LoadingBubble() {
+  return (
+    <div className="flex justify-start" aria-live="polite">
+      <div className="flat-card max-w-[94%] px-4 py-4 shadow-[10px_10px_0_0_var(--accent-soft)] sm:max-w-[82%]">
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">Mullet Guide</p>
+        <div className="space-y-2">
+          <div className="skeleton-block h-4 w-40" />
+          <div className="skeleton-block h-4 w-56" />
+          <div className="skeleton-block h-4 w-48" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WorkspaceSkeleton() {
+  return (
+    <section className="surface-card border-dashed">
+      <div className="grid gap-3">
+        {[0, 1, 2].map((item) => (
+          <article key={item} className="flat-card p-4">
+            <div className="space-y-3">
+              <div className="skeleton-block h-3 w-20" />
+              <div className="skeleton-block h-6 w-32" />
+              <div className="skeleton-block h-4 w-full" />
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
+  );
+}
+
+function riskLabel(risk: UserConstraints["riskPreference"]) {
+  if (risk === "safe") return "稳健";
+  if (risk === "aggressive") return "进取";
+  return "平衡";
 }

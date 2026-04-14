@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getErrorMessage } from "@/lib/utils/get-error-message";
 
 export const runtime = "nodejs";
 
@@ -39,7 +40,7 @@ export async function GET(request: Request) {
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Failed to fetch Composer quote",
+        error: getErrorMessage(error, "Failed to fetch Composer quote"),
       },
       { status: 502 },
     );

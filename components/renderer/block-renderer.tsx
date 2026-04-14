@@ -1,3 +1,4 @@
+import type { ReactNode } from "react";
 import { ActionCard } from "@/components/blocks/action-card";
 import { ConstraintCard } from "@/components/blocks/constraint-card";
 import { PortfolioView } from "@/components/blocks/portfolio-view";
@@ -5,6 +6,14 @@ import { VaultDetail } from "@/components/blocks/vault-detail";
 import { VaultList } from "@/components/blocks/vault-list";
 import type { A2UIBlock } from "@/lib/types/a2ui";
 import type { PortfolioViewPosition } from "@/lib/types/domain";
+
+const blockLayoutClass: Record<A2UIBlock["type"], string> = {
+  constraint_card: "xl:col-span-12",
+  vault_list: "xl:col-span-7",
+  vault_detail: "xl:col-span-5",
+  action_card: "xl:col-span-12",
+  portfolio_view: "xl:col-span-12",
+};
 
 export function BlockRenderer({
   blocks,
@@ -18,23 +27,40 @@ export function BlockRenderer({
   onPortfolioLoaded: (address: string, positions: PortfolioViewPosition[]) => void;
 }) {
   return (
-    <div className="space-y-6">
+    <div className="grid gap-5 xl:grid-cols-12">
       {blocks.map((block, index) => {
         const key = `${block.type}-${index}`;
+        let component: ReactNode = null;
+
         switch (block.type) {
           case "constraint_card":
-            return <ConstraintCard key={key} data={block.data} />;
+            component = <ConstraintCard data={block.data} />;
+            break;
           case "vault_list":
-            return <VaultList key={key} data={block.data} selectedVaultId={selectedVaultId} onSelectVault={onSelectVault} />;
+            component = <VaultList data={block.data} selectedVaultId={selectedVaultId} onSelectVault={onSelectVault} />;
+            break;
           case "vault_detail":
-            return <VaultDetail key={key} data={block.data} />;
+            component = <VaultDetail data={block.data} />;
+            break;
           case "action_card":
-            return <ActionCard key={key} data={block.data} onPortfolioLoaded={onPortfolioLoaded} />;
+            component = <ActionCard data={block.data} onPortfolioLoaded={onPortfolioLoaded} />;
+            break;
           case "portfolio_view":
-            return <PortfolioView key={key} data={block.data} />;
+            component = <PortfolioView data={block.data} />;
+            break;
           default:
-            return null;
+            component = null;
         }
+
+        if (!component) {
+          return null;
+        }
+
+        return (
+          <div key={key} className={blockLayoutClass[block.type]}>
+            {component}
+          </div>
+        );
       })}
     </div>
   );
