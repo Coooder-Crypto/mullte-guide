@@ -2,41 +2,76 @@ import { formatCurrency, formatPercent } from "@/lib/format/number";
 import type { PortfolioViewData } from "@/lib/types/a2ui";
 
 export function PortfolioView({ data }: { data: PortfolioViewData }) {
+  const protocolCount = new Set(data.positions.map((position) => position.protocol)).size;
+  const chainCount = new Set(data.positions.map((position) => position.chain)).size;
+
   return (
-    <section className="panel p-6 md:p-7">
-      <div className="flex flex-wrap items-center justify-between gap-4">
-        <div>
+    <section className="panel overflow-hidden p-6 md:p-7">
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="max-w-2xl">
           <p className="label-chip">Portfolio View</p>
-          <h2 className="mt-3 text-xl font-semibold sm:text-2xl">最新持仓</h2>
+          <h2 className="mt-4 text-2xl font-semibold text-ink sm:text-[2rem]">最新持仓</h2>
+          <p className="mt-3 text-sm leading-7 text-muted">
+            交易成功后，页面会直接把最新持仓回拉进工作区，帮助你确认资金已经落到目标协议。
+          </p>
         </div>
-        <p className="w-full break-all font-mono text-xs text-muted md:w-auto md:text-right">{data.address}</p>
+
+        <p className="w-full break-all rounded-[10px] border border-black bg-white px-4 py-3 font-mono text-xs text-muted md:w-auto md:max-w-[360px]">
+          {data.address}
+        </p>
+      </div>
+
+      <div className="mt-6 grid gap-3 md:grid-cols-3">
+        <SummaryTile label="持仓条目" value={`${data.positions.length}`} />
+        <SummaryTile label="协议数" value={`${protocolCount}`} />
+        <SummaryTile label="链数量" value={`${chainCount}`} />
       </div>
 
       <div className="mt-6 grid gap-3">
         {data.positions.map((position, index) => (
-          <div key={`${position.protocol}-${position.asset}-${index}`} className="rounded-[24px] border border-border bg-white/80 p-4 sm:p-5">
-            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-              <div>
-                <p className="text-lg font-semibold">{position.asset}</p>
-                <p className="mt-1 break-words text-sm text-muted">{position.protocol} · {position.chain}</p>
+          <article
+            key={`${position.protocol}-${position.asset}-${index}`}
+            className="rounded-[10px] border border-black bg-white p-5"
+          >
+            <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+              <div className="min-w-0 flex-1">
+                <div className="flex flex-wrap items-center gap-3">
+                  <span className="inline-flex h-9 w-9 items-center justify-center rounded-[8px] border border-black bg-white text-sm font-semibold text-ink">
+                    {String(index + 1).padStart(2, "0")}
+                  </span>
+                  <p className="break-words text-xl font-semibold text-ink">{position.asset}</p>
+                </div>
+                <p className="mt-3 break-words text-sm leading-7 text-muted">
+                  {position.protocol} · {position.chain}
+                </p>
               </div>
-              <div className="grid w-full grid-cols-1 gap-3 text-sm sm:grid-cols-2 md:min-w-[260px] md:w-auto">
+
+              <div className="grid w-full gap-3 sm:grid-cols-2 lg:w-[320px]">
                 <Metric label="价值" value={formatCurrency(position.amountUsd)} />
                 <Metric label="APY" value={formatPercent(position.apy)} />
               </div>
             </div>
-          </div>
+          </article>
         ))}
       </div>
     </section>
   );
 }
 
+function SummaryTile({ label, value }: { label: string; value: string }) {
+  return (
+    <article className="metric-tile">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">{label}</p>
+      <p className="mt-3 text-2xl font-semibold text-ink">{value}</p>
+    </article>
+  );
+}
+
 function Metric({ label, value }: { label: string; value: string }) {
   return (
-    <div className="rounded-2xl border border-border bg-slate-900/5 p-3">
-      <p className="text-xs uppercase tracking-[0.16em] text-muted">{label}</p>
-      <p className="mt-1 font-semibold text-ink">{value}</p>
+    <div className="rounded-[10px] border border-black bg-[#f4f4f5] p-4">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">{label}</p>
+      <p className="mt-2 font-semibold text-ink">{value}</p>
     </div>
   );
 }
