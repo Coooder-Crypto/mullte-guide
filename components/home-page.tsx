@@ -4,13 +4,11 @@ import { type KeyboardEvent, useMemo, useState } from "react";
 import { BlockRenderer } from "@/components/renderer/block-renderer";
 import { SiteHeader } from "@/components/site-header";
 import { buildBlocks } from "@/lib/agent/build-blocks";
-import { parseGoal, suggestPrompt } from "@/lib/agent/parse-goal";
-import { fetchEarnVaults } from "@/lib/api/earn";
+import { suggestPrompt } from "@/lib/agent/parse-goal";
+import { fetchGoalAnalysis } from "@/lib/api/agent";
+import type { VaultInsight } from "@/lib/types/agent";
 import type { NormalizedVault, PortfolioViewPosition, UserConstraints } from "@/lib/types/domain";
 import { getErrorMessage } from "@/lib/utils/get-error-message";
-import { filterVaults } from "@/lib/vaults/filter-vaults";
-import { normalizeVault } from "@/lib/vaults/normalize-vault";
-import { rankVaults } from "@/lib/vaults/rank-vaults";
 
 const DEFAULT_PROMPT = suggestPrompt();
 const QUICK_PROMPTS = [
@@ -30,6 +28,7 @@ export function HomePage() {
   const [constraints, setConstraints] = useState<UserConstraints | null>(null);
   const [vaults, setVaults] = useState<NormalizedVault[]>([]);
   const [selectedVaultId, setSelectedVaultId] = useState<string | null>(null);
+  const [vaultInsights, setVaultInsights] = useState<Record<string, VaultInsight>>({});
   const [portfolioAddress, setPortfolioAddress] = useState<string | null>(null);
   const [portfolioPositions, setPortfolioPositions] = useState<PortfolioViewPosition[]>([]);
   const [messages, setMessages] = useState<ChatMessage[]>([
@@ -53,10 +52,11 @@ export function HomePage() {
         constraints,
         vaults,
         selectedVault,
+        vaultInsights,
         portfolioAddress,
         portfolioPositions,
       }),
-    [constraints, vaults, selectedVault, portfolioAddress, portfolioPositions],
+    [constraints, vaults, selectedVault, vaultInsights, portfolioAddress, portfolioPositions],
   );
 
   const hasWorkspace = blocks.length > 0;
@@ -75,32 +75,24 @@ export function HomePage() {
 
     setIsLoading(true);
     setError(null);
+    setVaultInsights({});
     setPortfolioAddress(null);
     setPortfolioPositions([]);
 
     try {
-      const parsedConstraints = parseGoal(trimmed);
-      const response = await fetchEarnVaults();
-      const normalized = response.data
-        .map(normalizeVault)
-        .filter((vault): vault is NormalizedVault => Boolean(vault));
+      const response = await fetchGoalAnalysis(trimmed);
 
-      const filtered = filterVaults(normalized, parsedConstraints);
-      const ranked = rankVaults(filtered, parsedConstraints).slice(0, 3);
-
-      setConstraints(parsedConstraints);
-      setVaults(ranked);
-      setSelectedVaultId(ranked[0]?.id ?? null);
+      setConstraints(response.constraints);
+      setVaults(response.vaults);
+      setSelectedVaultId(response.selectedVaultId);
+      setVaultInsights(response.vaultInsights);
       setGoalInput("");
       setMessages((current) => [
         ...current,
         {
           id: `assistant-${Date.now()}`,
           role: "assistant",
-          content:
-            ranked.length > 0
-              ? `已理解为 ${parsedConstraints.amount} ${parsedConstraints.asset} on ${parsedConstraints.chain}，风险偏好 ${riskLabel(parsedConstraints.riskPreference)}。`
-              : `已理解为 ${parsedConstraints.amount} ${parsedConstraints.asset} on ${parsedConstraints.chain}，但当前没有找到合适的候选 vault。`,
+          content: response.message,
         },
       ]);
     } catch (unknownError) {
@@ -288,10 +280,4 @@ function WorkspaceSkeleton() {
       </div>
     </section>
   );
-}
-
-function riskLabel(risk: UserConstraints["riskPreference"]) {
-  if (risk === "safe") return "稳健";
-  if (risk === "aggressive") return "进取";
-  return "平衡";
 }

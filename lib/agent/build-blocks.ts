@@ -1,4 +1,5 @@
 import { getChainName } from "@/lib/constants/chains";
+import type { VaultInsight } from "@/lib/types/agent";
 import type { A2UIBlock } from "@/lib/types/a2ui";
 import type { NormalizedVault, PortfolioViewPosition, UserConstraints } from "@/lib/types/domain";
 
@@ -6,10 +7,11 @@ export function buildBlocks(params: {
   constraints: UserConstraints | null;
   vaults: NormalizedVault[];
   selectedVault: NormalizedVault | null;
+  vaultInsights?: Record<string, VaultInsight>;
   portfolioAddress?: string | null;
   portfolioPositions?: PortfolioViewPosition[];
 }): A2UIBlock[] {
-  const { constraints, vaults, selectedVault, portfolioAddress, portfolioPositions = [] } = params;
+  const { constraints, vaults, selectedVault, vaultInsights = {}, portfolioAddress, portfolioPositions = [] } = params;
   if (!constraints) {
     return [];
   }
@@ -29,12 +31,14 @@ export function buildBlocks(params: {
   ];
 
   if (selectedVault) {
+    const selectedVaultInsight = vaultInsights[selectedVault.id];
+
     blocks.push({
       type: "vault_detail",
       data: {
         vault: selectedVault,
-        whyRecommended: buildRecommendationReasons(selectedVault, constraints),
-        protocolInfo: buildProtocolInfo(selectedVault),
+        whyRecommended: selectedVaultInsight?.whyRecommended ?? buildRecommendationReasons(selectedVault, constraints),
+        protocolInfo: selectedVaultInsight?.protocolInfo ?? buildProtocolInfo(selectedVault),
       },
     });
 
@@ -60,7 +64,7 @@ export function buildBlocks(params: {
   return blocks;
 }
 
-function buildRecommendationReasons(vault: NormalizedVault, constraints: UserConstraints) {
+export function buildRecommendationReasons(vault: NormalizedVault, constraints: UserConstraints) {
   const reasons = [
     `${getChainName(vault.chainId)} 链与用户目标链一致`,
     `${vault.underlyingToken.symbol} 与输入资产匹配`,
@@ -83,7 +87,7 @@ function buildRecommendationReasons(vault: NormalizedVault, constraints: UserCon
   return reasons;
 }
 
-function buildProtocolInfo(vault: NormalizedVault) {
+export function buildProtocolInfo(vault: NormalizedVault) {
   const stableHint = vault.isStablecoin ? "以稳定币收益策略为主。" : "以单资产收益或协议包装资产为主。";
   return `${vault.protocol} on ${getChainName(vault.chainId)}。${stableHint}`;
 }
