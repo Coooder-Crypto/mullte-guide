@@ -67,7 +67,7 @@ export default function StudioPage() {
           <p className="label-chip">Routing</p>
           <div className="mt-5 space-y-3">
             {routeNotes.map((item) => (
-              <article key={item.path} className="rounded-[10px] border border-black bg-white p-4">
+              <article key={item.path} className="flat-card p-4">
                 <p className="text-sm font-semibold text-ink">{item.path}</p>
                 <p className="mt-2 text-sm leading-6 text-muted">{item.body}</p>
               </article>

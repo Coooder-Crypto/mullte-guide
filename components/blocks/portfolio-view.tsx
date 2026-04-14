@@ -1,3 +1,4 @@
+import { MetricCard } from "@/components/ui/flat-primitives";
 import { formatCurrency, formatPercent } from "@/lib/format/number";
 import type { PortfolioViewData } from "@/lib/types/a2ui";
 
@@ -22,17 +23,14 @@ export function PortfolioView({ data }: { data: PortfolioViewData }) {
       </div>
 
       <div className="mt-6 grid gap-3 md:grid-cols-3">
-        <SummaryTile label="持仓条目" value={`${data.positions.length}`} />
-        <SummaryTile label="协议数" value={`${protocolCount}`} />
-        <SummaryTile label="链数量" value={`${chainCount}`} />
+        <MetricCard label="持仓条目" value={`${data.positions.length}`} />
+        <MetricCard label="协议数" value={`${protocolCount}`} />
+        <MetricCard label="链数量" value={`${chainCount}`} />
       </div>
 
       <div className="mt-6 grid gap-3">
         {data.positions.map((position, index) => (
-          <article
-            key={`${position.protocol}-${position.asset}-${index}`}
-            className="rounded-[10px] border border-black bg-white p-5"
-          >
+          <article key={`${position.protocol}-${position.asset}-${index}`} className="flat-card p-5">
             <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
               <div className="min-w-0 flex-1">
                 <div className="flex flex-wrap items-center gap-3">
@@ -47,31 +45,13 @@ export function PortfolioView({ data }: { data: PortfolioViewData }) {
               </div>
 
               <div className="grid w-full gap-3 sm:grid-cols-2 lg:w-[320px]">
-                <Metric label="价值" value={formatCurrency(position.amountUsd)} />
-                <Metric label="APY" value={formatPercent(position.apy)} />
+                <MetricCard label="价值" value={formatCurrency(position.amountUsd)} className="bg-[#f4f4f5]" valueClassName="mt-2 text-base" />
+                <MetricCard label="APY" value={formatPercent(position.apy)} className="bg-[#f4f4f5]" valueClassName="mt-2 text-base" />
               </div>
             </div>
           </article>
         ))}
       </div>
     </section>
-  );
-}
-
-function SummaryTile({ label, value }: { label: string; value: string }) {
-  return (
-    <article className="metric-tile">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">{label}</p>
-      <p className="mt-3 text-2xl font-semibold text-ink">{value}</p>
-    </article>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[10px] border border-black bg-[#f4f4f5] p-4">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-muted">{label}</p>
-      <p className="mt-2 font-semibold text-ink">{value}</p>
-    </div>
   );
 }

@@ -2,6 +2,11 @@
 const nextConfig = {
   reactStrictMode: true,
   webpack: (config) => {
+    config.infrastructureLogging = {
+      ...config.infrastructureLogging,
+      level: "error",
+    };
+
     config.resolve.alias = {
       ...config.resolve.alias,
       "@react-native-async-storage/async-storage": false,

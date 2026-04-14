@@ -6,14 +6,15 @@ import { useState } from "react";
 import { WagmiProvider } from "wagmi";
 import { WALLET_CHAINS } from "@/lib/constants/chains";
 
-const config = getDefaultConfig({
-  appName: "Mullet Guide",
-  projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "demo-project-id",
-  chains: WALLET_CHAINS,
-  ssr: false,
-});
-
 export function AppProvider({ children }: { children: React.ReactNode }) {
+  const [config] = useState(() =>
+    getDefaultConfig({
+      appName: "Mullet Guide",
+      projectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || "demo-project-id",
+      chains: WALLET_CHAINS,
+      ssr: false,
+    }),
+  );
   const [queryClient] = useState(() => new QueryClient());
 
   return (

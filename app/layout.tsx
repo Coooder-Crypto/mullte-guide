@@ -22,7 +22,7 @@ export const viewport: Viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh-CN">
-      <body className="font-sans">
+      <body className="font-sans antialiased text-ink">
         <AppProvider>{children}</AppProvider>
       </body>
     </html>

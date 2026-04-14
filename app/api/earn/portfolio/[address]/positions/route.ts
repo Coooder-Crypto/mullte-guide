@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getErrorMessage } from "@/lib/utils/get-error-message";
 
 export const runtime = "nodejs";
 
@@ -24,7 +25,7 @@ export async function GET(
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Failed to fetch Earn portfolio positions",
+        error: getErrorMessage(error, "Failed to fetch Earn portfolio positions"),
       },
       { status: 502 },
     );

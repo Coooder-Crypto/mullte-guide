@@ -1,3 +1,4 @@
+import { Eyebrow, MetricCard } from "@/components/ui/flat-primitives";
 import { SiteHeader } from "@/components/site-header";
 
 const principles = [
@@ -42,9 +43,9 @@ export default function AboutPage() {
         <aside className="surface-card">
           <p className="label-chip">What It Changes</p>
           <div className="mt-5 grid gap-3">
-            <Metric title="输入方式" value="自然语言" detail="用户先说目标，不先选协议入口。" />
-            <Metric title="输出方式" value="A2UI 工作区" detail="推荐、解释与执行动作同屏展开。" />
-            <Metric title="底层能力" value="LI.FI" detail="统一的 vault、quote 与 portfolio 数据入口。" />
+            <MetricCard label="输入方式" value="自然语言" detail="用户先说目标，不先选协议入口。" />
+            <MetricCard label="输出方式" value="A2UI 工作区" detail="推荐、解释与执行动作同屏展开。" />
+            <MetricCard label="底层能力" value="LI.FI" detail="统一的 vault、quote 与 portfolio 数据入口。" />
           </div>
         </aside>
       </section>
@@ -52,21 +53,11 @@ export default function AboutPage() {
       <section className="grid gap-6 lg:grid-cols-2">
         {principles.map((item) => (
           <article key={item.title} className="surface-card">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">{item.title}</p>
+            <Eyebrow>{item.title}</Eyebrow>
             <p className="mt-4 text-sm leading-7 text-ink">{item.body}</p>
           </article>
         ))}
       </section>
     </main>
-  );
-}
-
-function Metric({ title, value, detail }: { title: string; value: string; detail: string }) {
-  return (
-    <article className="rounded-[10px] border border-black bg-white p-4">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">{title}</p>
-      <p className="mt-3 text-xl font-semibold text-ink">{value}</p>
-      <p className="mt-2 text-sm leading-6 text-muted">{detail}</p>
-    </article>
   );
 }

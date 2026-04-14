@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { getErrorMessage } from "@/lib/utils/get-error-message";
 
 const EARN_VAULTS_URL = "https://earn.li.fi/v1/earn/vaults";
 
@@ -23,7 +24,7 @@ export async function GET() {
   } catch (error) {
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : "Failed to fetch Earn vaults",
+        error: getErrorMessage(error, "Failed to fetch Earn vaults"),
       },
       { status: 502 },
     );

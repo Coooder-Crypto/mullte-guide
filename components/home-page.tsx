@@ -7,6 +7,7 @@ import { buildBlocks } from "@/lib/agent/build-blocks";
 import { parseGoal, suggestPrompt } from "@/lib/agent/parse-goal";
 import { fetchEarnVaults } from "@/lib/api/earn";
 import type { NormalizedVault, PortfolioViewPosition, UserConstraints } from "@/lib/types/domain";
+import { getErrorMessage } from "@/lib/utils/get-error-message";
 import { filterVaults } from "@/lib/vaults/filter-vaults";
 import { normalizeVault } from "@/lib/vaults/normalize-vault";
 import { rankVaults } from "@/lib/vaults/rank-vaults";
@@ -103,7 +104,7 @@ export function HomePage() {
         },
       ]);
     } catch (unknownError) {
-      const message = unknownError instanceof Error ? unknownError.message : "加载 vault 数据失败";
+      const message = getErrorMessage(unknownError, "加载 vault 数据失败");
       setError(message);
       setMessages((current) => [
         ...current,
@@ -259,7 +260,7 @@ function ChatBubble({ role, content }: { role: "user" | "assistant"; content: st
 function LoadingBubble() {
   return (
     <div className="flex justify-start" aria-live="polite">
-      <div className="max-w-[94%] rounded-[10px] border border-black bg-white px-4 py-4 shadow-[10px_10px_0_0_var(--accent-soft)] sm:max-w-[82%]">
+      <div className="flat-card max-w-[94%] px-4 py-4 shadow-[10px_10px_0_0_var(--accent-soft)] sm:max-w-[82%]">
         <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">Mullet Guide</p>
         <div className="space-y-2">
           <div className="skeleton-block h-4 w-40" />
@@ -276,7 +277,7 @@ function WorkspaceSkeleton() {
     <section className="surface-card border-dashed">
       <div className="grid gap-3">
         {[0, 1, 2].map((item) => (
-          <article key={item} className="rounded-[10px] border border-black bg-white p-4">
+          <article key={item} className="flat-card p-4">
             <div className="space-y-3">
               <div className="skeleton-block h-3 w-20" />
               <div className="skeleton-block h-6 w-32" />

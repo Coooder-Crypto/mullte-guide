@@ -2,6 +2,7 @@
 
 import { ConnectButton } from "@rainbow-me/rainbowkit";
 import { useEffect, useMemo, useState } from "react";
+import { DetailRow, Eyebrow, MetricCard } from "@/components/ui/flat-primitives";
 import { erc20Abi } from "viem";
 import {
   useAccount,
@@ -22,6 +23,7 @@ import { getChainName } from "@/lib/constants/chains";
 import type { ActionCardData } from "@/lib/types/a2ui";
 import type { PortfolioViewPosition } from "@/lib/types/domain";
 import type { QuoteResponse } from "@/lib/types/quote";
+import { getErrorMessage } from "@/lib/utils/get-error-message";
 
 export function ActionCard({
   data,
@@ -137,16 +139,19 @@ export function ActionCard({
     try {
       const response = await fetchComposerQuote(quoteParams);
       setQuote(response);
-      setAllowanceSatisfied(isNativeToken(response.action.fromToken.address));
       await refreshAllowance(response);
       return response;
     } catch (error) {
-      const message = error instanceof Error ? error.message : "Quote 请求失败";
+      const message = getErrorMessage(error, "Quote 请求失败");
       setQuoteError(message);
       throw error;
     } finally {
       setIsLoadingQuote(false);
     }
+  }
+
+  async function getActiveQuote() {
+    return quote ?? (await requestQuote());
   }
 
   async function refreshAllowance(activeQuote: QuoteResponse) {
@@ -177,7 +182,7 @@ export function ActionCard({
 
   async function handleApprove() {
     try {
-      const activeQuote = quote ?? (await requestQuote());
+      const activeQuote = await getActiveQuote();
       const approvalAddress = activeQuote.estimate.approvalAddress;
       if (!approvalAddress) {
         setAllowanceSatisfied(true);
@@ -194,13 +199,13 @@ export function ActionCard({
       });
       setApprovalHash(hash);
     } catch (error) {
-      setQuoteError(error instanceof Error ? error.message : "授权失败");
+      setQuoteError(getErrorMessage(error, "授权失败"));
     }
   }
 
   async function handleDeposit() {
     try {
-      const activeQuote = quote ?? (await requestQuote());
+      const activeQuote = await getActiveQuote();
       await ensureTargetChain();
 
       if (!allowanceSatisfied) {
@@ -223,7 +228,7 @@ export function ActionCard({
 
       setDepositHash(hash);
     } catch (error) {
-      setQuoteError(error instanceof Error ? error.message : "存入失败");
+      setQuoteError(getErrorMessage(error, "存入失败"));
     }
   }
 
@@ -287,29 +292,29 @@ export function ActionCard({
       </div>
 
       <div className="mt-6 grid gap-5 xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
-        <section className="rounded-[10px] border border-black bg-white p-5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">Execution Guardrails</p>
+        <section className="flat-card p-5">
+          <Eyebrow>Execution Guardrails</Eyebrow>
           <ul className="mt-4 space-y-3 text-sm leading-7 text-ink">
-            <li className="rounded-[10px] border border-black bg-[#f4f4f5] px-4 py-3">
+            <li className="flat-card-muted px-4 py-3">
               Composer Quote 通过服务端 Route Handler 代理，前端只消费统一响应。
             </li>
-            <li className="rounded-[10px] border border-black bg-[#f4f4f5] px-4 py-3 break-all">
+            <li className="flat-card-muted break-all px-4 py-3">
               目标 token 固定为 vault 地址：{data.vault.address}
             </li>
-            <li className="rounded-[10px] border border-black bg-[#f4f4f5] px-4 py-3">
+            <li className="flat-card-muted px-4 py-3">
               输入金额会按 {data.vault.underlyingToken.decimals} 位精度转换，兼容稳定币与 ETH 资产。
             </li>
           </ul>
         </section>
 
-        <section className="rounded-[10px] border border-black bg-white p-5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">Live State</p>
+        <section className="flat-card p-5">
+          <Eyebrow>Live State</Eyebrow>
           <div className="mt-4 space-y-3 text-sm text-muted">
-            <StateRow label="钱包状态" value={isConnected ? "已连接" : "未连接"} />
-            <StateRow label="当前链" value={activeChainLabel} />
-            <StateRow label="目标链" value={targetChainLabel} />
-            <StateRow label="预估输出" value={estimatedOutput ?? "尚未请求 Quote"} />
-            <StateRow label="授权状态" value={allowanceSatisfied ? "已满足" : "待授权"} />
+            <DetailRow label="钱包状态" value={isConnected ? "已连接" : "未连接"} />
+            <DetailRow label="当前链" value={activeChainLabel} />
+            <DetailRow label="目标链" value={targetChainLabel} />
+            <DetailRow label="预估输出" value={estimatedOutput ?? "尚未请求 Quote"} />
+            <DetailRow label="授权状态" value={allowanceSatisfied ? "已满足" : "待授权"} />
           </div>
         </section>
       </div>
@@ -318,7 +323,7 @@ export function ActionCard({
         <section className="mt-6 rounded-[10px] border border-black bg-accentSoft p-5">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">Quote Preview</p>
+              <Eyebrow>Quote Preview</Eyebrow>
               <h3 className="mt-2 text-xl font-semibold text-ink">本次执行路径概览</h3>
             </div>
             {quote.estimate.executionDuration ? (
@@ -329,42 +334,43 @@ export function ActionCard({
           </div>
 
           <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <InfoTile
+            <MetricCard
               label="From"
               value={formatTokenAmount(
                 fromMinimalUnit(quote.action.fromAmount, quote.action.fromToken.decimals),
                 quote.action.fromToken.symbol,
                 6,
               )}
+              valueClassName="mt-2 text-base"
             />
-            <InfoTile label="To" value={estimatedOutput ?? "-"} />
-            <InfoTile label="Min Receive" value={minimumOutput ?? "未提供"} />
+            <MetricCard label="To" value={estimatedOutput ?? "-"} valueClassName="mt-2 text-base" />
+            <MetricCard label="Min Receive" value={minimumOutput ?? "未提供"} valueClassName="mt-2 text-base" />
           </div>
         </section>
       ) : isLoadingQuote ? (
         <section className="mt-6 rounded-[10px] border border-black bg-accentSoft p-5">
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">Quote Preview</p>
+              <Eyebrow>Quote Preview</Eyebrow>
               <h3 className="mt-2 text-xl font-semibold text-ink">正在请求执行路径</h3>
             </div>
             <span className="status-pill">Loading</span>
           </div>
 
           <div className="mt-4 grid gap-3 md:grid-cols-3">
-            <div className="rounded-[10px] border border-black bg-white p-4">
+            <div className="flat-card p-4">
               <div className="space-y-3">
                 <div className="skeleton-block h-3 w-16" />
                 <div className="skeleton-block h-5 w-28" />
               </div>
             </div>
-            <div className="rounded-[10px] border border-black bg-white p-4">
+            <div className="flat-card p-4">
               <div className="space-y-3">
                 <div className="skeleton-block h-3 w-12" />
                 <div className="skeleton-block h-5 w-24" />
               </div>
             </div>
-            <div className="rounded-[10px] border border-black bg-white p-4">
+            <div className="flat-card p-4">
               <div className="space-y-3">
                 <div className="skeleton-block h-3 w-24" />
                 <div className="skeleton-block h-5 w-32" />
@@ -452,29 +458,11 @@ function StepStatusCard({
   return (
     <article className="metric-tile">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">Step {step}</p>
+        <Eyebrow>{`Step ${step}`}</Eyebrow>
         <span className="rounded-full border border-black bg-white px-3 py-1 text-xs font-medium text-ink">{status}</span>
       </div>
       <h3 className="mt-3 text-lg font-semibold text-ink">{title}</h3>
       <p className="mt-2 text-sm leading-6 text-muted">{detail}</p>
     </article>
-  );
-}
-
-function InfoTile({ label, value }: { label: string; value: string }) {
-  return (
-    <article className="rounded-[10px] border border-black bg-white p-4">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">{label}</p>
-      <p className="mt-2 break-words text-base font-semibold text-ink">{value}</p>
-    </article>
-  );
-}
-
-function StateRow({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="flex flex-col items-start justify-between gap-2 rounded-[10px] border border-black bg-[#f4f4f5] px-4 py-3 sm:flex-row sm:items-center sm:gap-4">
-      <span>{label}</span>
-      <span className="break-all font-medium text-ink sm:text-right">{value}</span>
-    </div>
   );
 }

@@ -1,3 +1,4 @@
+import { Eyebrow, MetricCard } from "@/components/ui/flat-primitives";
 import type { ConstraintCardData } from "@/lib/types/a2ui";
 
 const riskMap = {
@@ -20,28 +21,28 @@ export function ConstraintCard({ data }: { data: ConstraintCardData }) {
           </p>
         </div>
 
-        <div className="rounded-[10px] border border-black bg-signalSoft p-5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">Original Intent</p>
+        <div className="flat-card border-black bg-signalSoft p-5">
+          <Eyebrow>Original Intent</Eyebrow>
           <p className="mt-4 text-sm leading-7 text-ink">{data.rawInput}</p>
         </div>
       </div>
 
       <div className="mt-6 grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
-        <InfoCell label="资产" value={data.asset} description="输入被识别为主要投入资产" />
-        <InfoCell label="目标链" value={data.chain} description="后续只优先展示这条链上的机会" />
-        <InfoCell label="金额" value={`${data.amount} ${data.asset}`} description="用于 quote 与仓位展示的参考规模" />
-        <InfoCell label="风险偏好" value={riskMap[data.riskPreference]} description="会影响稳定币、TVL 与收益权重" />
+        <MetricCard label="资产" value={data.asset} detail="输入被识别为主要投入资产" valueClassName="mt-3 text-xl sm:text-2xl" />
+        <MetricCard label="目标链" value={data.chain} detail="后续只优先展示这条链上的机会" valueClassName="mt-3 text-xl sm:text-2xl" />
+        <MetricCard
+          label="金额"
+          value={`${data.amount} ${data.asset}`}
+          detail="用于 quote 与仓位展示的参考规模"
+          valueClassName="mt-3 text-xl sm:text-2xl"
+        />
+        <MetricCard
+          label="风险偏好"
+          value={riskMap[data.riskPreference]}
+          detail="会影响稳定币、TVL 与收益权重"
+          valueClassName="mt-3 text-xl sm:text-2xl"
+        />
       </div>
     </section>
-  );
-}
-
-function InfoCell({ label, value, description }: { label: string; value: string; description: string }) {
-  return (
-    <article className="metric-tile">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">{label}</p>
-      <p className="mt-3 break-words text-xl font-semibold text-ink sm:text-2xl">{value}</p>
-      <p className="mt-2 text-sm leading-6 text-muted">{description}</p>
-    </article>
   );
 }

@@ -1,3 +1,4 @@
+import { DataPill, Eyebrow } from "@/components/ui/flat-primitives";
 import { formatCurrency, formatPercent } from "@/lib/format/number";
 import type { VaultDetailData } from "@/lib/types/a2ui";
 
@@ -21,19 +22,19 @@ export function VaultDetail({ data }: { data: VaultDetailData }) {
         </div>
 
         <div className="flex w-full flex-wrap gap-3 lg:w-auto">
-          <Pill label="总 APY" value={formatPercent(vault.apy)} />
-          <Pill label="Base APY" value={formatPercent(vault.apyBase)} />
-          <Pill label="Reward APY" value={formatPercent(vault.apyReward)} />
-          <Pill label="TVL" value={formatCurrency(vault.tvlUsd)} />
+          <DataPill label="总 APY" value={formatPercent(vault.apy)} />
+          <DataPill label="Base APY" value={formatPercent(vault.apyBase)} />
+          <DataPill label="Reward APY" value={formatPercent(vault.apyReward)} />
+          <DataPill label="TVL" value={formatCurrency(vault.tvlUsd)} />
         </div>
       </div>
 
       <div className="mt-6 grid gap-5">
-        <section className="rounded-[10px] border border-black bg-white p-5">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">Why This Vault</p>
+        <section className="flat-card p-5">
+          <Eyebrow>Why This Vault</Eyebrow>
           <div className="mt-4 grid gap-3">
             {data.whyRecommended.map((reason, index) => (
-              <article key={reason} className="rounded-[10px] border border-black bg-[#f4f4f5] px-4 py-4">
+              <article key={reason} className="flat-card-muted px-4 py-4">
                 <div className="flex items-start gap-3">
                   <span className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-[8px] border border-black bg-white text-sm font-semibold text-ink">
                     {index + 1}
@@ -46,8 +47,8 @@ export function VaultDetail({ data }: { data: VaultDetailData }) {
         </section>
 
         <div className="grid gap-5 lg:grid-cols-2">
-          <section className="rounded-[10px] border border-black bg-white p-5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">Protocol Context</p>
+          <section className="flat-card p-5">
+            <Eyebrow>Protocol Context</Eyebrow>
             <p className="mt-4 text-sm leading-7 text-muted">{data.protocolInfo}</p>
             <p className="mt-4 text-sm leading-7 text-muted">
               {vault.description ?? "当前推荐主要基于链、资产、收益表现和可执行能力的组合评分。"}
@@ -65,12 +66,12 @@ export function VaultDetail({ data }: { data: VaultDetailData }) {
             ) : null}
           </section>
 
-          <section className="rounded-[10px] border border-black bg-white p-5">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">Capabilities</p>
+          <section className="flat-card p-5">
+            <Eyebrow>Capabilities</Eyebrow>
             <div className="mt-4 grid gap-3">
               {capabilityItems.map((item) => (
-                <article key={item.label} className="rounded-[10px] border border-black bg-[#f4f4f5] px-4 py-4">
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">{item.label}</p>
+                <article key={item.label} className="flat-card-muted px-4 py-4">
+                  <Eyebrow className="tracking-[0.2em]">{item.label}</Eyebrow>
                   <p className="mt-2 text-base font-semibold text-ink">{item.value}</p>
                 </article>
               ))}
@@ -87,14 +88,5 @@ export function VaultDetail({ data }: { data: VaultDetailData }) {
         </div>
       </div>
     </section>
-  );
-}
-
-function Pill({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="w-full rounded-[999px] border border-black bg-white px-4 py-3 sm:w-auto">
-      <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-muted">{label}</span>
-      <span className="ml-2 break-words font-semibold text-ink">{value}</span>
-    </div>
   );
 }

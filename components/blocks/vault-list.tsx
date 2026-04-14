@@ -1,4 +1,5 @@
 import clsx from "clsx";
+import { MetricCard } from "@/components/ui/flat-primitives";
 import { formatCurrency, formatPercent } from "@/lib/format/number";
 import type { VaultListData } from "@/lib/types/a2ui";
 
@@ -87,10 +88,14 @@ export function VaultList({
                   </div>
 
                   <div className="grid min-w-0 gap-3 sm:grid-cols-2 xl:w-[320px]">
-                    <Metric label="总 APY" value={formatPercent(vault.apy)} />
-                    <Metric label="TVL" value={formatCurrency(vault.tvlUsd)} />
-                    <Metric label="底层资产" value={vault.underlyingToken.symbol} />
-                    <Metric label="状态" value={vault.isTransactional ? "可直接执行" : "仅推荐查看"} />
+                    <MetricCard label="总 APY" value={formatPercent(vault.apy)} valueClassName="mt-2 text-base" />
+                    <MetricCard label="TVL" value={formatCurrency(vault.tvlUsd)} valueClassName="mt-2 text-base" />
+                    <MetricCard label="底层资产" value={vault.underlyingToken.symbol} valueClassName="mt-2 text-base" />
+                    <MetricCard
+                      label="状态"
+                      value={vault.isTransactional ? "可直接执行" : "仅推荐查看"}
+                      valueClassName="mt-2 text-base"
+                    />
                   </div>
                 </div>
               </button>
@@ -99,14 +104,5 @@ export function VaultList({
         )}
       </div>
     </section>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="rounded-[10px] border border-black bg-white p-4">
-      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">{label}</p>
-      <p className="mt-2 break-words text-base font-semibold text-ink">{value}</p>
-    </div>
   );
 }
