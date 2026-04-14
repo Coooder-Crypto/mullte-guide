@@ -1,9 +1,8 @@
 "use client";
 
-import Link from "next/link";
-import { ConnectButton } from "@rainbow-me/rainbowkit";
-import { useMemo, useState } from "react";
+import { type KeyboardEvent, useMemo, useState } from "react";
 import { BlockRenderer } from "@/components/renderer/block-renderer";
+import { SiteHeader } from "@/components/site-header";
 import { buildBlocks } from "@/lib/agent/build-blocks";
 import { parseGoal, suggestPrompt } from "@/lib/agent/parse-goal";
 import { fetchEarnVaults } from "@/lib/api/earn";
@@ -13,6 +12,11 @@ import { normalizeVault } from "@/lib/vaults/normalize-vault";
 import { rankVaults } from "@/lib/vaults/rank-vaults";
 
 const DEFAULT_PROMPT = suggestPrompt();
+const QUICK_PROMPTS = [
+  DEFAULT_PROMPT,
+  "deploy 250 USDC on Base with balanced risk",
+  "park 1 ETH safely on Arbitrum",
+];
 
 type ChatMessage = {
   id: string;
@@ -31,8 +35,7 @@ export function HomePage() {
     {
       id: "assistant-welcome",
       role: "assistant",
-      content:
-        "描述你的收益目标，例如：invest 100 USDC safely on Base。我会先理解约束，再弹出对应的 A2UI 工作区。",
+      content: "描述你的收益目标，例如：invest 100 USDC safely on Base。",
     },
   ]);
   const [isLoading, setIsLoading] = useState(false);
@@ -95,7 +98,7 @@ export function HomePage() {
           role: "assistant",
           content:
             ranked.length > 0
-              ? `已理解为 ${parsedConstraints.amount} ${parsedConstraints.asset} on ${parsedConstraints.chain}，风险偏好 ${riskLabel(parsedConstraints.riskPreference)}。下面弹出候选 vault 和执行工作区。`
+              ? `已理解为 ${parsedConstraints.amount} ${parsedConstraints.asset} on ${parsedConstraints.chain}，风险偏好 ${riskLabel(parsedConstraints.riskPreference)}。`
               : `已理解为 ${parsedConstraints.amount} ${parsedConstraints.asset} on ${parsedConstraints.chain}，但当前没有找到合适的候选 vault。`,
         },
       ]);
@@ -115,66 +118,44 @@ export function HomePage() {
     }
   }
 
+  function handleComposerKeyDown(event: KeyboardEvent<HTMLTextAreaElement>) {
+    if ((event.metaKey || event.ctrlKey) && event.key === "Enter") {
+      event.preventDefault();
+      void handleAnalyze();
+    }
+  }
+
   return (
-    <main className="mx-auto flex min-h-screen max-w-6xl flex-col px-3 py-4 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:px-4 sm:py-6 md:px-6 md:py-8">
-      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="label-chip">Mullet Guide</p>
-          <h1 className="mt-3 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-            Chat-first A2UI Yield Assistant
-          </h1>
-        </div>
+    <main className="page-shell">
+      <SiteHeader />
 
-        <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-          <Link href="/about" className="secondary-button">
-            About
-          </Link>
-          <Link href="/studio" className="secondary-button">
-            Studio
-          </Link>
-          <div className="w-full sm:w-auto">
-            <ConnectButton />
-          </div>
-        </div>
-      </header>
-
-      <section className="panel flex min-h-[72vh] flex-1 flex-col overflow-hidden">
-        <div className="border-b border-border px-5 py-4 md:px-7">
-          <div className="flex flex-wrap items-center justify-between gap-3">
+      <section className="panel flex min-h-[calc(100vh-10rem)] flex-col overflow-hidden">
+        <div className="border-b border-border/80 px-5 py-5 md:px-7">
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
             <div>
-              <p className="label-chip">Conversation</p>
-              <h2 className="mt-3 text-xl font-semibold sm:text-2xl">先对话，再弹出操作界面</h2>
+              <p className="label-chip">Chat</p>
+              <h1 className="mt-4 text-2xl font-semibold text-ink sm:text-[2rem]">说出你的收益目标</h1>
             </div>
-            <div className="rounded-full border border-border bg-white/80 px-4 py-2 text-xs text-muted">
-              示例：{DEFAULT_PROMPT}
-            </div>
+            <p className="text-sm text-muted">Ctrl / Cmd + Enter 发送</p>
           </div>
         </div>
 
         <div className="flex flex-1 flex-col">
-          <div className="flex-1 space-y-4 overflow-auto px-4 py-5 md:px-6">
+          <div className="flex-1 space-y-5 overflow-auto bg-[#fcfcfc] px-4 py-5 md:px-6">
             {messages.map((message) => (
               <ChatBubble key={message.id} role={message.role} content={message.content} />
             ))}
 
+            {isLoading ? <LoadingBubble /> : null}
+
             {error ? (
-              <div className="rounded-3xl border border-orange-300 bg-orange-50 px-4 py-3 text-sm text-orange-800">
+              <div className="rounded-[10px] border border-orange-500 bg-[#fff7ed] px-4 py-4 text-sm text-orange-900">
                 {error}
               </div>
             ) : null}
 
             {hasWorkspace ? (
-              <section className="rounded-[28px] border border-border bg-white/75 p-3 shadow-panel sm:p-4">
-                <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-border pb-4">
-                  <div>
-                    <p className="label-chip">A2UI Workspace</p>
-                    <h3 className="mt-3 text-lg font-semibold sm:text-xl">已根据对话生成可执行界面</h3>
-                  </div>
-                  <p className="max-w-md text-sm text-muted">
-                    这里不再是首页说明区，而是对话结果直接展开的操作工作区。
-                  </p>
-                </div>
-
+              <section className="rounded-[10px] border border-black bg-white p-3 shadow-[10px_10px_0_0_var(--accent-soft)] sm:p-4">
                 <BlockRenderer
                   blocks={blocks}
                   selectedVaultId={selectedVaultId}
@@ -185,37 +166,66 @@ export function HomePage() {
                   }}
                 />
               </section>
+            ) : isLoading ? (
+              <WorkspaceSkeleton />
             ) : (
-              <div className="rounded-[28px] border border-dashed border-border bg-white/50 px-5 py-6 text-sm text-muted">
-                还没有生成 A2UI 工作区。发送一条收益目标后，这里会自动展开约束卡、vault 列表、详情卡和交易卡。
-              </div>
+              <section className="surface-card border-dashed px-5 py-6 text-sm leading-7 text-muted">
+                发送目标后，这里会展开可执行工作区。
+              </section>
             )}
           </div>
 
-          <div className="border-t border-border bg-white/50 px-4 py-4 md:px-6">
-            <div className="rounded-[28px] border border-border bg-white/85 p-3 sm:p-4">
+          <div className="border-t border-border/80 bg-[#f4f4f5] px-4 py-4 md:px-6">
+            <div className="composer-shell">
+              <label htmlFor="goal-input" className="block text-sm font-medium text-ink">
+                收益目标
+              </label>
               <textarea
+                id="goal-input"
                 value={goalInput}
                 onChange={(event) => setGoalInput(event.target.value)}
-                rows={3}
-                className="w-full resize-none bg-transparent text-base text-ink outline-none"
+                onKeyDown={handleComposerKeyDown}
+                rows={4}
+                className="mt-3 min-h-[120px] w-full resize-none rounded-[8px] border border-black bg-white px-3 py-3 text-base leading-7 text-ink"
                 placeholder="Type your yield goal..."
               />
-              <div className="mt-3 flex flex-col gap-3 border-t border-border pt-3 sm:flex-row sm:items-center sm:justify-between">
+
+              <div className="soft-divider mt-4" />
+
+              <div className="mt-4 flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
                 <div className="flex flex-wrap gap-2">
-                  <button type="button" onClick={() => setGoalInput(DEFAULT_PROMPT)} className="secondary-button">
-                    Use Demo Prompt
-                  </button>
+                  {QUICK_PROMPTS.map((prompt) => (
+                    <button
+                      key={prompt}
+                      type="button"
+                      onClick={() => setGoalInput(prompt)}
+                      disabled={isLoading}
+                      className="prompt-pill"
+                    >
+                      {prompt}
+                    </button>
+                  ))}
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => void handleAnalyze()}
-                  disabled={isLoading}
-                  className="primary-button"
-                >
-                  {isLoading ? "Thinking..." : "Send"}
-                </button>
+                <div className="flex flex-col gap-3 sm:flex-row">
+                  <button
+                    type="button"
+                    onClick={() => setGoalInput(DEFAULT_PROMPT)}
+                    disabled={isLoading}
+                    className="secondary-button"
+                  >
+                    Use Demo Prompt
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => void handleAnalyze()}
+                    disabled={isLoading}
+                    className="primary-button"
+                  >
+                    {isLoading ? "Thinking..." : "Send"}
+                  </button>
+                </div>
               </div>
             </div>
           </div>
@@ -231,18 +241,51 @@ function ChatBubble({ role, content }: { role: "user" | "assistant"; content: st
   return (
     <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
       <div
-        className={`max-w-[92%] rounded-[28px] px-4 py-3 text-sm leading-7 sm:max-w-[80%] ${
+        className={`max-w-[94%] rounded-[10px] border px-4 py-4 text-sm leading-7 sm:max-w-[82%] ${
           isUser
-            ? "bg-accent text-white"
-            : "border border-border bg-white/80 text-ink"
+            ? "border-black bg-black text-white shadow-[10px_10px_0_0_rgba(24,24,27,0.12)]"
+            : "border-black bg-white text-ink shadow-[10px_10px_0_0_var(--accent-soft)]"
         }`}
       >
-        <p className={`mb-1 text-[10px] uppercase tracking-[0.18em] ${isUser ? "text-white/70" : "text-muted"}`}>
+        <p className={`mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] ${isUser ? "text-white/72" : "text-muted"}`}>
           {isUser ? "You" : "Mullet Guide"}
         </p>
         <p className="whitespace-pre-wrap break-words">{content}</p>
       </div>
     </div>
+  );
+}
+
+function LoadingBubble() {
+  return (
+    <div className="flex justify-start" aria-live="polite">
+      <div className="max-w-[94%] rounded-[10px] border border-black bg-white px-4 py-4 shadow-[10px_10px_0_0_var(--accent-soft)] sm:max-w-[82%]">
+        <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">Mullet Guide</p>
+        <div className="space-y-2">
+          <div className="skeleton-block h-4 w-40" />
+          <div className="skeleton-block h-4 w-56" />
+          <div className="skeleton-block h-4 w-48" />
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function WorkspaceSkeleton() {
+  return (
+    <section className="surface-card border-dashed">
+      <div className="grid gap-3">
+        {[0, 1, 2].map((item) => (
+          <article key={item} className="rounded-[10px] border border-black bg-white p-4">
+            <div className="space-y-3">
+              <div className="skeleton-block h-3 w-20" />
+              <div className="skeleton-block h-6 w-32" />
+              <div className="skeleton-block h-4 w-full" />
+            </div>
+          </article>
+        ))}
+      </div>
+    </section>
   );
 }
 
