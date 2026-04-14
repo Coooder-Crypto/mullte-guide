@@ -1,4 +1,23 @@
-import Link from "next/link";
+import { SiteHeader } from "@/components/site-header";
+
+const principles = [
+  {
+    title: "先压约束，再做推荐",
+    body: "用户先表达目标，系统把金额、资产、链和风险偏好压成结构化约束，再进入排序和解释。",
+  },
+  {
+    title: "工作区原地展开",
+    body: "不把用户丢去新的工具页，首页本身就是一个可以从 chat 切到交易的操作面。",
+  },
+  {
+    title: "推荐与执行同屏",
+    body: "推荐不是终点，详情、quote、授权和交易状态都在一个连续界面里完成。",
+  },
+  {
+    title: "LI.FI 负责统一入口",
+    body: "收益机会发现、quote 生成和持仓读取都由 LI.FI 提供统一能力，前端专注决策体验。",
+  },
+];
 
 export const metadata = {
   title: "About | Mullet Guide",
@@ -6,53 +25,48 @@ export const metadata = {
 
 export default function AboutPage() {
   return (
-    <main className="mx-auto min-h-screen max-w-5xl px-3 py-4 sm:px-4 sm:py-6 md:px-6 md:py-8">
-      <header className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <p className="label-chip">About</p>
-          <h1 className="mt-3 text-2xl font-semibold tracking-tight text-ink sm:text-3xl">
-            Mullet Guide 在做什么
-          </h1>
-        </div>
-        <div className="flex flex-col gap-3 sm:flex-row">
-          <Link href="/" className="secondary-button">
-            Back Home
-          </Link>
-          <Link href="/studio" className="secondary-button">
-            Open Studio
-          </Link>
-        </div>
-      </header>
+    <main className="page-shell">
+      <SiteHeader />
 
-      <section className="panel p-6 md:p-7">
-        <div className="grid gap-6 md:grid-cols-2">
-          <InfoCard
-            title="项目目标"
-            body="把复杂 DeFi 收益操作收敛成自然语言输入、推荐解释和可执行交易。用户不需要先理解协议入口，只需要表达目标。"
-          />
-          <InfoCard
-            title="为什么用 LI.FI"
-            body="LI.FI 负责统一收益机会发现、统一 quote 生成、统一持仓读取。Mullet Guide 负责把用户意图翻译成推荐和 UI。"
-          />
-          <InfoCard
-            title="当前链路"
-            body="输入目标 -> 解析约束 -> 拉 Earn vaults -> 生成 A2UI -> 选择 vault -> 请求 Composer quote -> 钱包交易 -> 拉 portfolio。"
-          />
-          <InfoCard
-            title="产品定位"
-            body="这是一个 chat-first 的 A2UI 收益助手，不是复杂多代理系统。重点是让用户更快完成收益决策和执行。"
-          />
-        </div>
+      <section className="grid gap-6 xl:grid-cols-[minmax(0,1.4fr)_minmax(320px,0.8fr)]">
+        <section className="panel overflow-hidden px-5 py-6 sm:px-7 sm:py-8">
+          <p className="label-chip">Product Positioning</p>
+          <h1 className="display-title mt-5 max-w-4xl text-[2.8rem] text-ink sm:text-[3.9rem] lg:text-[4.6rem]">
+            不是另一个 DeFi dashboard，而是一套更短的收益执行路径。
+          </h1>
+          <p className="mt-5 max-w-3xl text-sm leading-7 text-muted sm:text-base">
+            Mullet Guide 的重点不是堆更多协议入口，而是把“想做什么”直接收敛成“下一步能点什么”。用户不需要先理解协议结构，只需要表达目标。
+          </p>
+        </section>
+
+        <aside className="surface-card">
+          <p className="label-chip">What It Changes</p>
+          <div className="mt-5 grid gap-3">
+            <Metric title="输入方式" value="自然语言" detail="用户先说目标，不先选协议入口。" />
+            <Metric title="输出方式" value="A2UI 工作区" detail="推荐、解释与执行动作同屏展开。" />
+            <Metric title="底层能力" value="LI.FI" detail="统一的 vault、quote 与 portfolio 数据入口。" />
+          </div>
+        </aside>
+      </section>
+
+      <section className="grid gap-6 lg:grid-cols-2">
+        {principles.map((item) => (
+          <article key={item.title} className="surface-card">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">{item.title}</p>
+            <p className="mt-4 text-sm leading-7 text-ink">{item.body}</p>
+          </article>
+        ))}
       </section>
     </main>
   );
 }
 
-function InfoCard({ title, body }: { title: string; body: string }) {
+function Metric({ title, value, detail }: { title: string; value: string; detail: string }) {
   return (
-    <article className="rounded-[28px] border border-border bg-white/80 p-5">
-      <p className="text-xs uppercase tracking-[0.18em] text-muted">{title}</p>
-      <p className="mt-4 text-sm leading-7 text-ink">{body}</p>
+    <article className="rounded-[10px] border border-black bg-white p-4">
+      <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-muted">{title}</p>
+      <p className="mt-3 text-xl font-semibold text-ink">{value}</p>
+      <p className="mt-2 text-sm leading-6 text-muted">{detail}</p>
     </article>
   );
 }
